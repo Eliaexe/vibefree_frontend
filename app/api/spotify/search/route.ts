@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
 export async function GET(request: NextRequest) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get('spotify_access_token')?.value;
 
   if (!accessToken) {

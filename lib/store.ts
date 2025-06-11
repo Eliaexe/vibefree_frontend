@@ -48,6 +48,9 @@ type State = {
   currentView: View;
   selectedAlbumId: string | null;
   selectedArtistId: string | null;
+  // For player management
+  activeTrack: SpotifyTrack | null;
+  isPlayerVisible: boolean;
 }
 
 type Actions = {
@@ -59,6 +62,9 @@ type Actions = {
   showHome: () => void;
   showAlbumDetails: (albumId: string) => void;
   showArtistDetails: (artistId: string) => void;
+  // For player management
+  showPlayer: (track: SpotifyTrack) => void;
+  hidePlayer: () => void;
 }
 
 export const useUserStore = create<State & Actions>((set) => ({
@@ -70,6 +76,9 @@ export const useUserStore = create<State & Actions>((set) => ({
   currentView: 'home',
   selectedAlbumId: null,
   selectedArtistId: null,
+  // For player management
+  activeTrack: null,
+  isPlayerVisible: false,
   setUser: (user) => {
     set({ user, isLoggedIn: !!user });
   },
@@ -80,7 +89,7 @@ export const useUserStore = create<State & Actions>((set) => ({
     set({ savedAlbums: albums });
   },
   logout: () => {
-    set({ user: null, isLoggedIn: false, topTracks: [], savedAlbums: [], currentView: 'home' });
+    set({ user: null, isLoggedIn: false, topTracks: [], savedAlbums: [], currentView: 'home', isPlayerVisible: false, activeTrack: null });
     // Here you might want to call an API endpoint to clear the httpOnly cookies
     // For example: fetch('/api/spotify/logout', { method: 'POST' });
   },
@@ -88,4 +97,7 @@ export const useUserStore = create<State & Actions>((set) => ({
   showHome: () => set({ currentView: 'home', selectedAlbumId: null, selectedArtistId: null }),
   showAlbumDetails: (albumId: string) => set({ currentView: 'albumDetails', selectedAlbumId: albumId }),
   showArtistDetails: (artistId: string) => set({ currentView: 'artistDetails', selectedArtistId: artistId }),
+  // For player management
+  showPlayer: (track: SpotifyTrack) => set({ activeTrack: track, isPlayerVisible: true }),
+  hidePlayer: () => set({ isPlayerVisible: false }),
 })) 

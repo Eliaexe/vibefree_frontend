@@ -3,19 +3,24 @@ import Image from "next/image";
 
 // Assuming the store now defines a SpotifyTrack type
 import { useUserStore } from "@/lib/store";
+import { MouseEvent } from "react";
 
 // Get the track type from the store definition
 type Track = ReturnType<typeof useUserStore.getState>['topTracks'][0];
 
 
 export default function SongCard({ track }: { track: Track }) {
-    console.log("track-------------", track);
-  const imageUrl = track.album.images?.[0]?.url;
+  const showPlayer = useUserStore((state) => state.showPlayer);
+  const imageUrl = track.album?.images?.[0]?.url;
   const artists = track.artists.map(artist => artist.name).join(', ');
 
+  const handleClick = (e: MouseEvent) => {
+    e.preventDefault();
+    showPlayer(track);
+  }
 
   return (
-    <a href={track.external_urls.spotify} target="_blank" rel="noopener noreferrer">
+    <div onClick={handleClick} className="cursor-pointer">
         <Card className="hover:bg-muted/50 transition-colors">
         <CardHeader className="flex-row items-center gap-4">
             {imageUrl && (
@@ -27,6 +32,6 @@ export default function SongCard({ track }: { track: Track }) {
             </div>
         </CardHeader>
         </Card>
-    </a>
+    </div>
   );
 }
