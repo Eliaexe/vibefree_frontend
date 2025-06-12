@@ -52,13 +52,25 @@ export default function PlayerFooter() {
     
     useEffect(() => {
         const audio = audioRef.current;
+        
+        const handleLoadedMetadata = () => {
+            if (audio) {
+                setTrackProgress({
+                    currentTime: audio.currentTime,
+                    duration: audio.duration,
+                });
+            }
+        };
+
         if (audio) {
             audio.addEventListener('timeupdate', handleTimeUpdate);
+            audio.addEventListener('loadedmetadata', handleLoadedMetadata);
             return () => {
                 audio.removeEventListener('timeupdate', handleTimeUpdate);
+                audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
             };
         }
-    }, [handleTimeUpdate]);
+    }, [handleTimeUpdate, setTrackProgress]);
 
     useEffect(() => {
         if (activeTrack?.url && audioRef.current) {
@@ -121,19 +133,19 @@ export default function PlayerFooter() {
 
             {/* Player Controls for Mobile and Desktop */}
             <div className="flex items-center gap-1">
-                <Button onClick={playPrevious} variant="ghost" size="icon" disabled={isTrackLoading}>
+                <Button onClick={(e) => { e.stopPropagation(); playPrevious(); }} variant="ghost" size="icon" disabled={isTrackLoading}>
                     <SkipBackIcon className="h-5 w-5" />
                 </Button>
                 <Button 
                     variant="default" 
                     size="icon" 
                     className="rounded-full h-10 w-10" 
-                    onClick={handlePlayPause}
+                    onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
                     disabled={isTrackLoading || !activeTrack.url}
                 >
                     {isTrackLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
                 </Button>
-                <Button onClick={playNext} variant="ghost" size="icon" disabled={isTrackLoading}>
+                <Button onClick={(e) => { e.stopPropagation(); playNext(); }} variant="ghost" size="icon" disabled={isTrackLoading}>
                     <SkipForwardIcon className="h-5 w-5" />
                 </Button>
             </div>

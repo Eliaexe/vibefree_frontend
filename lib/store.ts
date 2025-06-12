@@ -57,7 +57,7 @@ type State = {
   // For player management
   activeTrack: ActiveTrack | null;
   isPlayerVisible: boolean;
-  playQueue: SpotifyTrack[];
+  playQueue: ActiveTrack[];
   currentTrackIndex: number | null;
   isTrackLoading: boolean;
   isPlayerExpanded: boolean;
@@ -85,6 +85,7 @@ type Actions = {
   playPrevious: () => Promise<void>;
   setPlayerExpanded: (isExpanded: boolean) => void;
   setTrackProgress: (progress: { currentTime: number; duration: number; }) => void;
+  preloadNextTracks: () => Promise<void>;
 }
 
 const fetchTrackUrl = async (track: SpotifyTrack): Promise<string | null> => {
@@ -159,53 +160,110 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   showHome: () => set({ currentView: 'home', selectedAlbumId: null, selectedArtistId: null }),
   showAlbumDetails: (albumId: string) => set({ currentView: 'albumDetails', selectedAlbumId: albumId }),
   showArtistDetails: (artistId: string) => set({ currentView: 'artistDetails', selectedArtistId: artistId }),
-  // For player management
+  // Player Actions with Preloading
   playTracks: async (tracks, startIndex) => {
-    const newTrack = tracks[startIndex];
+    const newActiveTrack = tracks[startIndex];
+    const newPlayQueue: ActiveTrack[] = tracks.map(t => ({...t})); // Create a queue of ActiveTracks
+
     set({
-      playQueue: tracks,
+      playQueue: newPlayQueue,
       currentTrackIndex: startIndex,
-      activeTrack: newTrack,
+      activeTrack: newActiveTrack,
       isPlayerVisible: true,
       isTrackLoading: true,
     });
-    const url = await fetchTrackUrl(newTrack);
-    set(state => ({
-      // Only update if the track is still the active one
-      activeTrack: state.activeTrack?.id === newTrack.id ? { ...newTrack, url: url ?? undefined } : state.activeTrack,
-      isTrackLoading: false
-    }));
+
+    const url = await fetchTrackUrl(newActiveTrack);
+    set(state => {
+      const updatedQueue = state.playQueue.map((track, index) => 
+        index === startIndex ? { ...track, url: url ?? undefined } : track
+      );
+      return {
+        activeTrack: { ...newActiveTrack, url: url ?? undefined },
+        playQueue: updatedQueue,
+        isTrackLoading: false,
+      };
+    });
+
+    get().preloadNextTracks();
   },
   hidePlayer: () => set({ isPlayerVisible: false, activeTrack: null, isTrackLoading: false }),
   playNext: async () => {
-    const { playQueue, currentTrackIndex } = get();
-    if (playQueue.length > 0 && currentTrackIndex !== null) {
-      const nextIndex = currentTrackIndex + 1;
-      if (nextIndex < playQueue.length) {
-        const nextTrack = playQueue[nextIndex];
-        set({ currentTrackIndex: nextIndex, activeTrack: nextTrack, isTrackLoading: true });
-        const url = await fetchTrackUrl(nextTrack);
-        set(state => ({
-          activeTrack: state.activeTrack?.id === nextTrack.id ? { ...nextTrack, url: url ?? undefined } : state.activeTrack,
-          isTrackLoading: false
-        }));
-      } else {
-        set({ isPlayerVisible: false, activeTrack: null, currentTrackIndex: null, playQueue: [], isTrackLoading: false }); // Clear queue when it ends
-      }
+    const { playQueue, currentTrackIndex, preloadNextTracks } = get();
+    if (currentTrackIndex === null || currentTrackIndex >= playQueue.length - 1) {
+      set({ isPlayerVisible: false, activeTrack: null });
+      return;
     }
+
+    const nextIndex = currentTrackIndex + 1;
+    const nextTrack = playQueue[nextIndex];
+
+    set({ currentTrackIndex: nextIndex, activeTrack: nextTrack, isTrackLoading: !nextTrack.url });
+
+    if (!nextTrack.url) {
+      const url = await fetchTrackUrl(nextTrack);
+      set(state => {
+        const updatedQueue = state.playQueue.map((track, index) =>
+          index === nextIndex ? { ...track, url: url ?? undefined } : track
+        );
+        return {
+          activeTrack: { ...nextTrack, url: url ?? undefined },
+          playQueue: updatedQueue,
+          isTrackLoading: false,
+        };
+      });
+    }
+    
+    preloadNextTracks();
   },
   playPrevious: async () => {
+    const { playQueue, currentTrackIndex, preloadNextTracks } = get();
+    if (currentTrackIndex === null || currentTrackIndex === 0) return;
+
+    const prevIndex = currentTrackIndex - 1;
+    const prevTrack = playQueue[prevIndex];
+
+    set({ currentTrackIndex: prevIndex, activeTrack: prevTrack, isTrackLoading: !prevTrack.url });
+
+    if (!prevTrack.url) {
+      const url = await fetchTrackUrl(prevTrack);
+      set(state => {
+        const updatedQueue = state.playQueue.map((track, index) =>
+          index === prevIndex ? { ...track, url: url ?? undefined } : track
+        );
+        return {
+          activeTrack: { ...prevTrack, url: url ?? undefined },
+          playQueue: updatedQueue,
+          isTrackLoading: false,
+        };
+      });
+    }
+
+    preloadNextTracks();
+  },
+  preloadNextTracks: async () => {
     const { playQueue, currentTrackIndex } = get();
-    if (playQueue.length > 0 && currentTrackIndex !== null) {
-      const prevIndex = currentTrackIndex - 1;
-      if (prevIndex >= 0) {
-        const prevTrack = playQueue[prevIndex];
-        set({ currentTrackIndex: prevIndex, activeTrack: prevTrack, isTrackLoading: true });
-        const url = await fetchTrackUrl(prevTrack);
-        set(state => ({
-          activeTrack: state.activeTrack?.id === prevTrack.id ? { ...prevTrack, url: url ?? undefined } : state.activeTrack,
-          isTrackLoading: false
-        }));
+    if (currentTrackIndex === null) return;
+
+    const preloadDepth = 2;
+    for (let i = 1; i <= preloadDepth; i++) {
+      const targetIndex = currentTrackIndex + i;
+      if (targetIndex < playQueue.length) {
+        const trackToPreload = playQueue[targetIndex];
+        if (!trackToPreload.url) {
+          fetchTrackUrl(trackToPreload).then(url => {
+            if (url) {
+              set(state => {
+                const newPlayQueue = [...state.playQueue];
+                if (newPlayQueue[targetIndex]?.id === trackToPreload.id) {
+                  newPlayQueue[targetIndex] = { ...newPlayQueue[targetIndex], url };
+                  return { playQueue: newPlayQueue };
+                }
+                return {};
+              });
+            }
+          });
+        }
       }
     }
   },

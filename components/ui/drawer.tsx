@@ -65,6 +65,8 @@ function DrawerContent({
         )}
         {...props}
       >
+        <DrawerTitle className="sr-only">Drawer Panel</DrawerTitle>
+        <DrawerDescription className="sr-only">A panel that slides in from the edge of the screen.</DrawerDescription>
         <div className="bg-muted mx-auto mt-4 hidden h-2 w-[100px] shrink-0 rounded-full group-data-[vaul-drawer-direction=bottom]/drawer-content:block" />
         {children}
       </DrawerPrimitive.Content>
