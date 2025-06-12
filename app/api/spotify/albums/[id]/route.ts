@@ -9,7 +9,7 @@ export async function GET(
   context: any    
 ) {
   const albumId = context.params.id;
-  const accessToken = await cookies().get('spotify_access_token')?.value;
+  const accessToken = (await cookies()).get('spotify_access_token')?.value;
 
   if (!accessToken) {
     return NextResponse.json({ error: 'Access token not found' }, { status: 401 });
