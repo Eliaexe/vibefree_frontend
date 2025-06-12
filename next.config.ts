@@ -1,9 +1,32 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const withPWA = require("next-pwa")({
+    dest: "public",
+    register: true,
+    skipWaiting: true,
+    disable: process.env.NODE_ENV === "development",
+});
 
-const nextConfig: NextConfig = {
+const nextConfig = {
   images: {
-    domains: ['i.scdn.co', 'mosaic.scdn.co', 'seed-mix-image.spotifycdn.com', 'i.ytimg.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'i.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'mosaic.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'seed-mix-image.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'i.ytimg.com',
+      },
+    ],
   },
 };
 
-export default nextConfig;
+module.exports = withPWA(nextConfig);

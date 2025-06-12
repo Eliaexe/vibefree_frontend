@@ -8,6 +8,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { Loader2 } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer";
+import LoadingLogo from "./LoadingLogo";
 
 const formatDuration = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -143,7 +144,7 @@ export default function PlayerFooter() {
                     onClick={(e) => { e.stopPropagation(); handlePlayPause(); }}
                     disabled={isTrackLoading || !activeTrack.url}
                 >
-                    {isTrackLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
+                    {isTrackLoading ? <LoadingLogo showText={false} /> : isPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
                 </Button>
                 <Button onClick={(e) => { e.stopPropagation(); playNext(); }} variant="ghost" size="icon" disabled={isTrackLoading}>
                     <SkipForwardIcon className="h-5 w-5" />
@@ -222,7 +223,7 @@ export default function PlayerFooter() {
                                 onClick={handlePlayPause}
                                 disabled={isTrackLoading || !activeTrack.url}
                             >
-                                {isTrackLoading ? <Loader2 className="h-8 w-8 animate-spin" /> : isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
+                                {isTrackLoading ? <LoadingLogo showText={false} /> : isPlaying ? <PauseIcon className="h-8 w-8" /> : <PlayIcon className="h-8 w-8" />}
                             </Button>
                             <Button onClick={playNext} variant="ghost" size="icon" disabled={isTrackLoading}>
                                 <SkipForwardIcon className="h-8 w-8" />

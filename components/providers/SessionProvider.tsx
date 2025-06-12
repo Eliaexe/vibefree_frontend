@@ -2,6 +2,7 @@
 
 import { useUserStore } from '@/lib/store';
 import { useEffect, useState } from 'react';
+import LoadingLogo from '@/components/elements/LoadingLogo';
 
 // This component will be responsible for fetching user data on initial load
 // and keeping the user state in sync.
@@ -47,7 +48,7 @@ export default function SessionProvider({ children }: { children: React.ReactNod
 
   // Optionally, you can show a loader while the session is being checked
   if (isLoading) {
-    return <div>Loading session...</div>;
+    return <LoadingLogo />;
   }
 
   return <>{children}</>;

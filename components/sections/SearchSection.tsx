@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import AlbumCard from "../elements/AlbumCard";
 import ArtistCard from "../elements/ArtistCard";
+import LoadingLogo from "../elements/LoadingLogo";
 
 // Define a more specific type for search results
 interface SearchResults {
@@ -58,7 +59,7 @@ export default function SearchSection() {
                 onChange={(e) => setSearchTerm(e.target.value)}
             />
 
-            {loading && <p>Loading...</p>}
+            {loading && <LoadingLogo />}
 
             {results && !loading && (
                 <div className="space-y-8">

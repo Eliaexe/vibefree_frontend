@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { ArrowLeftIcon, PlayIcon, Music2Icon } from "lucide-react";
+import LoadingLogo from "../elements/LoadingLogo";
 
 // Define more specific types
 interface AlbumDetails {
@@ -72,7 +73,7 @@ export default function AlbumDetailsSection() {
     };
 
     if (loading) {
-        return <p>Loading album details...</p>;
+        return <LoadingLogo />;
     }
 
     if (!albumDetails) {

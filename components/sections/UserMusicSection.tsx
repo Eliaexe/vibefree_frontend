@@ -5,6 +5,7 @@ import { useUserStore } from "@/lib/store";
 import SongCard from "../elements/SongCard";
 import AlbumCard from "../elements/AlbumCard";
 import { SavedAlbum } from "@/lib/store";
+import LoadingLogo from "../elements/LoadingLogo";
 
 export default function UserMusicSection() {
   const { 
@@ -53,6 +54,12 @@ export default function UserMusicSection() {
     setSavedAlbums, savedAlbums.length, 
     setSavedTracks, savedTracks.length
   ]);
+
+  const isLoading = topTracks.length === 0 && savedAlbums.length === 0 && savedTracks.length === 0;
+
+  if (isLoading) {
+    return <LoadingLogo />;
+  }
 
   return (
     <div className="space-y-8 py-4">

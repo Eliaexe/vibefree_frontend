@@ -16,6 +16,18 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "VibeFree",
   description: "Your music app",
+  manifest: "/manifest.json",
+  themeColor: "#121212",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "VibeFree",
+  },
+  icons: {
+    icon: "/logo.svg",
+    shortcut: "/logo.svg",
+    apple: "/logo.svg",
+  },
 };
 
 export default function RootLayout({

@@ -1,0 +1,22 @@
+<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="background:black">
+  <g transform="translate(50, 50)">
+    <rect x="-20" y="-20" width="6" height="40" fill="white">
+      <animate attributeName="height" values="20;40;20" dur="1.2s" begin="0s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+      <animate attributeName="y" values="-10;-20;-10" dur="1.2s" begin="0s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+    </rect>
+    <rect x="0" y="-20" width="6" height="40" fill="white">
+      <animate attributeName="height" values="40;20;40" dur="1.2s" begin="0.2s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+      <animate attributeName="y" values="-20;-10;-20" dur="1.2s" begin="0.2s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+    </rect>
+    <rect x="20" y="-20" width="6" height="40" fill="white">
+      <animate attributeName="height" values="30;50;30" dur="1.2s" begin="0.4s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+      <animate attributeName="y" values="-15;-25;-15" dur="1.2s" begin="0.4s" repeatCount="indefinite"
+               keySplines="0.42 0 0.58 1" calcMode="spline"/>
+    </rect>
+  </g>
+</svg>
