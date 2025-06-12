@@ -48,6 +48,7 @@ type State = {
   isLoggedIn: boolean;
   topTracks: SpotifyTrack[];
   savedAlbums: SavedAlbum[];
+  savedTracks: SpotifyTrack[];
   searchTerm: string;
   // For view management
   currentView: View;
@@ -59,12 +60,18 @@ type State = {
   playQueue: SpotifyTrack[];
   currentTrackIndex: number | null;
   isTrackLoading: boolean;
+  isPlayerExpanded: boolean;
+  trackProgress: {
+    currentTime: number;
+    duration: number;
+  };
 }
 
 type Actions = {
   setUser: (user: SpotifyUser | null) => void;
   setTopTracks: (tracks: SpotifyTrack[]) => void;
   setSavedAlbums: (albums: SavedAlbum[]) => void;
+  setSavedTracks: (tracks: SpotifyTrack[]) => void;
   setSearchTerm: (term: string) => void;
   logout: () => void;
   // For view management
@@ -76,6 +83,8 @@ type Actions = {
   hidePlayer: () => void;
   playNext: () => Promise<void>;
   playPrevious: () => Promise<void>;
+  setPlayerExpanded: (isExpanded: boolean) => void;
+  setTrackProgress: (progress: { currentTime: number; duration: number; }) => void;
 }
 
 const fetchTrackUrl = async (track: SpotifyTrack): Promise<string | null> => {
@@ -112,6 +121,7 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   isLoggedIn: false,
   topTracks: [],
   savedAlbums: [],
+  savedTracks: [],
   searchTerm: '',
   // For view management
   currentView: 'home',
@@ -123,6 +133,8 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   playQueue: [],
   currentTrackIndex: null,
   isTrackLoading: false,
+  isPlayerExpanded: false,
+  trackProgress: { currentTime: 0, duration: 0 },
   setUser: (user) => {
     set({ user, isLoggedIn: !!user });
   },
@@ -132,11 +144,14 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   setSavedAlbums: (albums) => {
     set({ savedAlbums: albums });
   },
+  setSavedTracks: (tracks) => {
+    set({ savedTracks: tracks });
+  },
   setSearchTerm: (term) => {
     set({ searchTerm: term });
   },
   logout: () => {
-    set({ user: null, isLoggedIn: false, topTracks: [], savedAlbums: [], searchTerm: '', currentView: 'home', isPlayerVisible: false, activeTrack: null, playQueue: [], currentTrackIndex: null, isTrackLoading: false });
+    set({ user: null, isLoggedIn: false, topTracks: [], savedAlbums: [], savedTracks: [], searchTerm: '', currentView: 'home', isPlayerVisible: false, activeTrack: null, playQueue: [], currentTrackIndex: null, isTrackLoading: false, isPlayerExpanded: false });
     // Here you might want to call an API endpoint to clear the httpOnly cookies
     // For example: fetch('/api/spotify/logout', { method: 'POST' });
   },
@@ -194,4 +209,10 @@ export const useUserStore = create<State & Actions>((set, get) => ({
       }
     }
   },
+  setPlayerExpanded: (isExpanded) => {
+    set({ isPlayerExpanded: isExpanded });
+  },
+  setTrackProgress: (progress) => {
+    set({ trackProgress: progress });
+  }
 })) 

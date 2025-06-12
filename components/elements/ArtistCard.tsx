@@ -1,42 +1,45 @@
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import Image from "next/image";
-import { useUserStore } from "@/lib/store";
-import { MouseEvent } from "react";
+import Image from 'next/image';
+import { useUserStore } from '@/lib/store';
 
-// Define the type based on what the search API returns for artists
+// A generic Artist object that fits search results
 interface Artist {
     id: string;
     name: string;
-    images: { url: string; }[];
-    external_urls: {
-        spotify: string;
-    };
+    images: { url: string }[];
+    type: string; // To display "Artist"
 }
 
-export default function ArtistCard({ artist }: { artist: Artist }) {
-  const showArtistDetails = useUserStore((state) => state.showArtistDetails);
-  const imageUrl = artist.images?.[0]?.url;
+interface ArtistCardProps {
+    artist: Artist;
+}
 
-  const handleClick = (e: MouseEvent) => {
-    // Prevent navigation if it's a simple left-click
-    if (!e.metaKey && !e.ctrlKey) {
-        e.preventDefault();
+export default function ArtistCard({ artist }: ArtistCardProps) {
+    const { showArtistDetails } = useUserStore();
+    const imageUrl = artist.images?.[0]?.url;
+
+    const handleCardClick = () => {
         showArtistDetails(artist.id);
-    }
-  }
+    };
 
-  return (
-    <a href={artist.external_urls.spotify} onClick={handleClick} target="_blank" rel="noopener noreferrer">
-        <Card className="hover:bg-muted/50 transition-colors text-center cursor-pointer">
-            <CardHeader>
-                {imageUrl ? (
-                    <Image src={imageUrl} alt={artist.name} width={200} height={200} className="rounded-full w-32 h-32 mx-auto" />
-                ) : (
-                    <div className="w-32 h-32 mx-auto bg-muted rounded-full" />
-                )}
-                <CardTitle className="mt-4">{artist.name}</CardTitle>
-            </CardHeader>
-        </Card>
-    </a>
-  );
+    return (
+        <div className="group cursor-pointer text-center" onClick={handleCardClick}>
+            {imageUrl ? (
+                <Image 
+                    src={imageUrl} 
+                    alt={artist.name} 
+                    width={192} 
+                    height={192} 
+                    className="w-full h-auto object-cover rounded-full aspect-square"
+                />
+            ) : (
+                <div className="w-full bg-muted rounded-full aspect-square flex items-center justify-center">
+                    <p className="text-muted-foreground text-sm">No Image</p>
+                </div>
+            )}
+            <div className="mt-2">
+                <p className="font-semibold truncate group-hover:underline">{artist.name}</p>
+                <p className="text-sm text-muted-foreground capitalize">{artist.type}</p>
+            </div>
+        </div>
+    );
 } 

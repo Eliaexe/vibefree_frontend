@@ -40,18 +40,22 @@ export default function ArtistDetailSection() {
             
             <section>
                 <h2 className="text-2xl font-bold mb-4">Top Tracks</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="flex space-x-4 overflow-x-auto pb-4">
                     {topTracks.map((track: any) => (
-                        <SongCard key={track.id} track={track} />
+                        <div key={track.id} className="w-48 flex-shrink-0">
+                            <SongCard track={track} />
+                        </div>
                     ))}
                 </div>
             </section>
 
             <section className="mt-8">
                 <h2 className="text-2xl font-bold mb-4">Albums & Singles</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                <div className="flex space-x-4 overflow-x-auto pb-4">
                     {albums.map((album: any) => (
-                        <AlbumCard key={album.id} album={album} />
+                        <div key={album.id} className="w-48 flex-shrink-0">
+                            <AlbumCard album={album} />
+                        </div>
                     ))}
                 </div>
             </section>

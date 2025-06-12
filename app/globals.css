@@ -136,4 +136,12 @@
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-muted-foreground;
   }
+  
+  /* Custom styles for the mini-player progress bar thumb */
+  .group [data-radix-slider-thumb] {
+    @apply h-3 w-3 hidden;
+  }
+  .group:hover [data-radix-slider-thumb] {
+    @apply block;
+  }
 }
