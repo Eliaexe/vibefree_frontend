@@ -1,3 +1,4 @@
+// app/api/spotify/albums/[id]/route.ts
 import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
@@ -6,9 +7,9 @@ const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  context: any    // ← remove your explicit `{ params: { id: string } }` type here
 ) {
-  const albumId = params.id;
+  const albumId = context.params.id;
   const accessToken = cookies().get('spotify_access_token')?.value;
 
   if (!accessToken) {
