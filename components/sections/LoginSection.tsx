@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { useUserStore } from '@/lib/store';
+import { LogOut, Music2 } from 'lucide-react';
 
 export default function LoginSection() {
   const { user, isLoggedIn, logout } = useUserStore();
@@ -17,16 +18,42 @@ export default function LoginSection() {
 
   if (!isLoggedIn) {
     return (
-      <div>
-        <Button className="mt-4 rounded-full bg-green-500 text-white" onClick={loginWithSpotify}>Login with Spotify</Button>
+      <div className="flex flex-col items-center justify-center p-8 rounded-lg bg-card border border-border shadow-sm">
+        <div className="mb-6 p-4 rounded-full bg-green-500/10 text-green-500">
+          <Music2 size={40} />
+        </div>
+        <h2 className="text-xl font-semibold mb-2">Benvenuto su VibeFree</h2>
+        <p className="text-sm text-muted-foreground mb-6 text-center">
+          Accedi con il tuo account Spotify per iniziare ad ascoltare musica senza limiti
+        </p>
+        <Button 
+          size="lg"
+          className="rounded-full bg-green-500 hover:bg-green-600 text-white font-medium px-8"
+          onClick={loginWithSpotify}
+        >
+          Login con Spotify
+        </Button>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1>Welcome, {user?.display_name}</h1>
-      <button onClick={handleLogout}>Logout</button>
+    <div className="flex flex-col items-center justify-center p-6 rounded-lg bg-card border border-border shadow-sm">
+      <div className="w-full flex items-center justify-between mb-4">
+        <div>
+          <h2 className="font-medium">Ciao, {user?.display_name}</h2>
+          <p className="text-sm text-muted-foreground">Bentornato su VibeFree</p>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          onClick={handleLogout}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <LogOut className="h-4 w-4 mr-2" />
+          Logout
+        </Button>
+      </div>
     </div>
   );
 }
