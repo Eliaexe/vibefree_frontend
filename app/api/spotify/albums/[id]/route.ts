@@ -9,17 +9,14 @@ export async function GET(
   { params }: { params: { id: string } },
 ) {
   const albumId = params.id;
-  const cookieStore = cookies();
-  const accessToken = cookieStore.get('spotify_access_token')?.value;
+  const accessToken = cookies().get('spotify_access_token')?.value;
 
   if (!accessToken) {
     return NextResponse.json({ error: 'Access token not found' }, { status: 401 });
   }
 
   const response = await fetch(`${SPOTIFY_API_BASE}/albums/${albumId}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
   if (!response.ok) {
@@ -28,4 +25,4 @@ export async function GET(
 
   const data = await response.json();
   return NextResponse.json(data);
-} 
+}
