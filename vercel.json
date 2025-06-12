@@ -1,0 +1,15 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "npm install --prefer-offline --no-audit && next build",
+  "installCommand": "npm install --prefer-offline --no-audit",
+  "crons": [],
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "github": {
+    "silent": true
+  }
+}    
