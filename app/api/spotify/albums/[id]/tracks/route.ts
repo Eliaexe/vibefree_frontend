@@ -1,10 +1,14 @@
 import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
-export async function GET(request: Request, context: { params: { id: string } }) {
-  const albumId = context.params.id;
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } },
+) {
+  const albumId = params.id;
   const cookieStore = cookies();
   const accessToken = cookieStore.get('spotify_access_token')?.value;
 
