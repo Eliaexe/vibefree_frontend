@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(data, { status: 400 });
   }
 
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   cookieStore.set('spotify_access_token', data.access_token, {
     httpOnly: true,
     secure: process.env.NODE_ENV !== 'development',

@@ -1,105 +1,108 @@
 'use client';
 
-import { useState, useEffect, useMemo } from "react";
 import { Input } from "@/components/ui/input";
+import { useUserStore } from "@/lib/store";
 import SongCard from "../elements/SongCard";
+import { useEffect, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import AlbumCard from "../elements/AlbumCard";
 import ArtistCard from "../elements/ArtistCard";
 
-// A custom hook for debouncing
-function useDebounce(value: string, delay: number) {
-  const [debouncedValue, setDebouncedValue] = useState(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
+// Define a more specific type for search results
+interface SearchResults {
+    tracks: { items: any[] };
+    albums: { items: any[] };
+    artists: { items: any[] };
 }
 
 export default function SearchSection() {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any>(null);
-  const debouncedQuery = useDebounce(query, 500); // 500ms delay
+    const { searchTerm, setSearchTerm, playTracks } = useUserStore();
+    const [results, setResults] = useState<SearchResults | null>(null);
+    const [loading, setLoading] = useState(false);
+    const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
-  useEffect(() => {
-    if (debouncedQuery) {
-      const searchItems = async () => {
-        const response = await fetch(`/api/spotify/search?q=${debouncedQuery}`);
-        const data = await response.json();
-        setResults(data);
-      };
-      searchItems();
-    } else {
-      setResults(null);
-    }
-  }, [debouncedQuery]);
+    useEffect(() => {
+        if (debouncedSearchTerm) {
+            setLoading(true);
+            const fetchResults = async () => {
+                const response = await fetch(`/api/spotify/search?q=${debouncedSearchTerm}`);
+                const data = await response.json();
 
-  const renderOrder = useMemo(() => {
-    if (!results) return [];
-    
-    const defaultOrder = ['tracks', 'artists', 'albums'];
-    const lowerCaseQuery = debouncedQuery.toLowerCase().trim();
+                // Simple reordering logic based on search term
+                const reorderedData = { ...data };
+                const lowerCaseSearch = debouncedSearchTerm.toLowerCase();
 
-    const topArtist = results.artists?.items[0]?.name.toLowerCase().trim();
-    if (topArtist === lowerCaseQuery) {
-        return ['artists', 'tracks', 'albums'];
-    }
+                // If an artist name is an exact match, move it to the front.
+                const exactArtistMatchIndex = data.artists.items.findIndex(
+                    (artist: any) => artist.name.toLowerCase() === lowerCaseSearch
+                );
+                if (exactArtistMatchIndex > 0) {
+                    const [exactMatch] = reorderedData.artists.items.splice(exactArtistMatchIndex, 1);
+                    reorderedData.artists.items.unshift(exactMatch);
+                }
+                
+                setResults(reorderedData);
+                setLoading(false);
+            };
+            fetchResults();
+        } else {
+            setResults(null);
+        }
+    }, [debouncedSearchTerm]);
 
-    const topTrack = results.tracks?.items[0]?.name.toLowerCase().trim();
-    if (topTrack === lowerCaseQuery) {
-        return ['tracks', 'artists', 'albums'];
-    }
+    return (
+        <div className="space-y-8">
+            <Input 
+                placeholder="Search for songs, albums, or artists..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
 
-    return defaultOrder;
+            {loading && <p>Loading...</p>}
 
-  }, [results, debouncedQuery]);
+            {results && !loading && (
+                <div className="space-y-8">
+                    {results.tracks.items.length > 0 && (
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-bold">Songs</h2>
+                            <div className="flex space-x-4 overflow-x-auto pb-4">
+                                {results.tracks.items.map((track, index) => (
+                                    <div key={track.id} className="w-48 flex-shrink-0" onClick={() => playTracks(results.tracks.items, index)}>
+                                        <SongCard track={track} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                    
+                    {results.artists.items.length > 0 && (
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-bold">Artists</h2>
+                            <div className="flex space-x-4 overflow-x-auto pb-4">
+                                {results.artists.items.map((artist: any) => (
+                                    <div key={artist.id} className="w-48 flex-shrink-0">
+                                        <ArtistCard artist={artist} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
+                    {results.albums.items.length > 0 && (
+                        <div className="space-y-4">
+                            <h2 className="text-2xl font-bold">Albums</h2>
+                            <div className="flex space-x-4 overflow-x-auto pb-4">
+                                {results.albums.items.map((album: any) => (
+                                     <div key={album.id} className="w-48 flex-shrink-0">
+                                        <AlbumCard album={album} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
-  const resultSections = {
-    tracks: results?.tracks?.items?.length > 0 && (
-        <section key="tracks" className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Songs</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {results.tracks.items.map((track: any) => <SongCard key={track.id} track={track} />)}
-            </div>
-        </section>
-    ),
-    albums: results?.albums?.items?.length > 0 && (
-        <section key="albums" className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Albums</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {results.albums.items.map((album: any) => <AlbumCard key={album.id} album={album} />)}
-            </div>
-        </section>
-    ),
-    artists: results?.artists?.items?.length > 0 && (
-        <section key="artists" className="mt-8">
-            <h2 className="text-2xl font-bold mb-4">Artists</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                {results.artists.items.map((artist: any) => <ArtistCard key={artist.id} artist={artist} />)}
-            </div>
-        </section>
-    )
-  };
-
-  return (
-    <div className="mt-8">
-      <Input 
-        type="text" 
-        placeholder="Search for artists, songs, or albums"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-      />
-
-      {results && (
-        <div className="mt-8">
-            {renderOrder.map(section => resultSections[section as keyof typeof resultSections])}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

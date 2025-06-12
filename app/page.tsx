@@ -9,7 +9,7 @@ import AlbumDetailsSection from "@/components/sections/AlbumDetailsSection";
 import ArtistDetailSection from "@/components/sections/ArtistDetailSection";
 import PlayerFooter from "@/components/elements/PlayerFooter";
 function AppContent() {
-    const { currentView } = useUserStore();
+    const { currentView, searchTerm } = useUserStore();
 
     switch (currentView) {
         case 'albumDetails':
@@ -21,10 +21,7 @@ function AppContent() {
             return (
                 <>
                     <SearchSection />
-                    {/* <PlayerFooter /> */}
-
-                    {/* <UserMusicSection /> */}
-                    {/* <AlbumSection /> */}
+                    {searchTerm ? null : <UserMusicSection />}
                 </>
             );
     }
@@ -37,7 +34,7 @@ export default function Home() {
   return (
     <div className="relative min-h-screen pb-28">
       <header className="flex justify-between items-center p-4 container mx-auto">
-        <h1 className="text-4xl font-bold">VibeFree</h1>
+        <h1 className="text-3xl md:text-4xl font-bold">VibeFree</h1>
         {isLoggedIn && user && (
             <div>
                 <p>Welcome, {user.display_name}</p>
