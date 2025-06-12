@@ -88,32 +88,35 @@ type Actions = {
   preloadNextTracks: () => Promise<void>;
 }
 
-const fetchTrackUrl = async (track: SpotifyTrack): Promise<string | null> => {
+// This function just constructs the URL for the streaming endpoint.
+const getStreamUrl = (track: SpotifyTrack): string | null => {
   if (!track) return null;
-
   const params = new URLSearchParams({
     songName: track.name,
     artistName: track.artists.map(a => a.name).join(', '),
     durationMs: track.duration_ms.toString(),
   });
+  return `/api/youtube/stream?${params.toString()}`;
+};
 
+// This function calls the backend to warm up the cache for a track.
+const preloadTrack = async (track: SpotifyTrack): Promise<void> => {
+  if (!track) return;
+  console.log(`[Preload] Inizio pre-caricamento per: ${track.name}`);
+  const params = new URLSearchParams({
+    songName: track.name,
+    artistName: track.artists.map(a => a.name).join(', '),
+    durationMs: track.duration_ms.toString(),
+  });
   try {
-    const response = await fetch(`http://localhost:3001/download?${params.toString()}`);
-    if (!response.ok) {
-      console.error(`Error fetching track URL: ${response.statusText}`);
-      const errorBody = await response.json().catch(() => ({ message: 'Failed to parse error response' }));
-      throw new Error(errorBody.message || 'Backend responded with an error');
-    }
-    const data = await response.json();
-    if (data.success && data.url) {
-      return data.url;
+    const response = await fetch(`/api/youtube/cache-lookup?${params.toString()}`);
+    if (response.ok) {
+        console.log(`[Preload] Successo per: ${track.name}`);
     } else {
-      throw new Error(data.message || 'Backend did not return a valid URL.');
+        console.warn(`[Preload] Fallito per: ${track.name}`);
     }
   } catch (error) {
-    console.error('Failed to fetch track URL from backend:', error);
-    // Optionally, you could set an error state here
-    return null;
+      console.error(`[Preload] Errore di rete per: ${track.name}`, error);
   }
 };
 
@@ -163,108 +166,51 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   // Player Actions with Preloading
   playTracks: async (tracks, startIndex) => {
     const newActiveTrack = tracks[startIndex];
-    const newPlayQueue: ActiveTrack[] = tracks.map(t => ({...t})); // Create a queue of ActiveTracks
-
     set({
-      playQueue: newPlayQueue,
+      playQueue: tracks.map(t => ({...t})),
       currentTrackIndex: startIndex,
-      activeTrack: newActiveTrack,
+      activeTrack: { ...newActiveTrack, url: getStreamUrl(newActiveTrack) ?? undefined },
       isPlayerVisible: true,
-      isTrackLoading: true,
+      isTrackLoading: false, // The audio element handles loading state
     });
-
-    const url = await fetchTrackUrl(newActiveTrack);
-    set(state => {
-      const updatedQueue = state.playQueue.map((track, index) => 
-        index === startIndex ? { ...track, url: url ?? undefined } : track
-      );
-      return {
-        activeTrack: { ...newActiveTrack, url: url ?? undefined },
-        playQueue: updatedQueue,
-        isTrackLoading: false,
-      };
-    });
-
     get().preloadNextTracks();
   },
   hidePlayer: () => set({ isPlayerVisible: false, activeTrack: null, isTrackLoading: false }),
   playNext: async () => {
-    const { playQueue, currentTrackIndex, preloadNextTracks } = get();
+    const { playQueue, currentTrackIndex } = get();
     if (currentTrackIndex === null || currentTrackIndex >= playQueue.length - 1) {
       set({ isPlayerVisible: false, activeTrack: null });
       return;
     }
-
     const nextIndex = currentTrackIndex + 1;
     const nextTrack = playQueue[nextIndex];
-
-    set({ currentTrackIndex: nextIndex, activeTrack: nextTrack, isTrackLoading: !nextTrack.url });
-
-    if (!nextTrack.url) {
-      const url = await fetchTrackUrl(nextTrack);
-      set(state => {
-        const updatedQueue = state.playQueue.map((track, index) =>
-          index === nextIndex ? { ...track, url: url ?? undefined } : track
-        );
-        return {
-          activeTrack: { ...nextTrack, url: url ?? undefined },
-          playQueue: updatedQueue,
-          isTrackLoading: false,
-        };
-      });
-    }
-    
-    preloadNextTracks();
+    set({
+        currentTrackIndex: nextIndex,
+        activeTrack: { ...nextTrack, url: getStreamUrl(nextTrack) ?? undefined },
+    });
+    get().preloadNextTracks();
   },
   playPrevious: async () => {
-    const { playQueue, currentTrackIndex, preloadNextTracks } = get();
+    const { playQueue, currentTrackIndex } = get();
     if (currentTrackIndex === null || currentTrackIndex === 0) return;
-
     const prevIndex = currentTrackIndex - 1;
     const prevTrack = playQueue[prevIndex];
-
-    set({ currentTrackIndex: prevIndex, activeTrack: prevTrack, isTrackLoading: !prevTrack.url });
-
-    if (!prevTrack.url) {
-      const url = await fetchTrackUrl(prevTrack);
-      set(state => {
-        const updatedQueue = state.playQueue.map((track, index) =>
-          index === prevIndex ? { ...track, url: url ?? undefined } : track
-        );
-        return {
-          activeTrack: { ...prevTrack, url: url ?? undefined },
-          playQueue: updatedQueue,
-          isTrackLoading: false,
-        };
-      });
-    }
-
-    preloadNextTracks();
+    set({
+        currentTrackIndex: prevIndex,
+        activeTrack: { ...prevTrack, url: getStreamUrl(prevTrack) ?? undefined },
+    });
+    get().preloadNextTracks();
   },
   preloadNextTracks: async () => {
     const { playQueue, currentTrackIndex } = get();
     if (currentTrackIndex === null) return;
-
     const preloadDepth = 2;
     for (let i = 1; i <= preloadDepth; i++) {
-      const targetIndex = currentTrackIndex + i;
-      if (targetIndex < playQueue.length) {
-        const trackToPreload = playQueue[targetIndex];
-        if (!trackToPreload.url) {
-          fetchTrackUrl(trackToPreload).then(url => {
-            if (url) {
-              set(state => {
-                const newPlayQueue = [...state.playQueue];
-                if (newPlayQueue[targetIndex]?.id === trackToPreload.id) {
-                  newPlayQueue[targetIndex] = { ...newPlayQueue[targetIndex], url };
-                  return { playQueue: newPlayQueue };
-                }
-                return {};
-              });
-            }
-          });
+        const targetIndex = currentTrackIndex + i;
+        if (targetIndex < playQueue.length) {
+            // No need to check for URL, just trigger the preload
+            preloadTrack(playQueue[targetIndex]);
         }
-      }
     }
   },
   setPlayerExpanded: (isExpanded) => {
