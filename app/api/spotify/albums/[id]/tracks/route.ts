@@ -5,7 +5,7 @@ const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
 export async function GET(request: Request, context: { params: { id: string } }) {
   const albumId = context.params.id;
-  const cookieStore = await cookies();
+  const cookieStore = cookies();
   const accessToken = cookieStore.get('spotify_access_token')?.value;
 
   if (!accessToken) {
