@@ -2,6 +2,12 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import SessionProvider from '@/components/providers/SessionProvider';
+import dynamic from 'next/dynamic';
+
+// Import InstallPWA dynamically to avoid SSR issues
+const InstallPWA = dynamic(() => import('@/components/InstallPWA'), { 
+  ssr: false 
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,10 +43,16 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <SessionProvider>{children}</SessionProvider>
+        <InstallPWA />
       </body>
     </html>
   );
