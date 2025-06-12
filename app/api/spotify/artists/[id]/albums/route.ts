@@ -9,7 +9,8 @@ export async function GET(
   context: any,
 ) {
   const artistId = context.params.id;
-  const accessToken = cookies().get('spotify_access_token')?.value;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('spotify_access_token')?.value;
 
   if (!accessToken) {
     return NextResponse.json({ error: 'Access token not found' }, { status: 401 });
