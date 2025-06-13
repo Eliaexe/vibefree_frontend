@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 // This is a Route Handler for the Next.js App Router.
 // It acts as a proxy to the actual backend service.
 
-const BACKEND_URL = process.env.VIBEFREE_BACKEND_URL;
+const BACKEND_URL = process.env.VIBEFREE_BACKEND_URL || 'http://localhost:5501';
 
 export async function GET(req: NextRequest) {
     // Extract search params from the incoming request
@@ -12,21 +12,19 @@ export async function GET(req: NextRequest) {
     // Forward the search params to the backend service
     const backendUrl = `${BACKEND_URL}/stream?${searchParams.toString()}`;
 
-    console.log(`[Next.js Proxy] Forwarding request to: ${backendUrl}`);
+    console.log(`[Next.js Proxy] Forwarding stream request to: ${backendUrl}`);
 
     try {
         // Fetch the stream from the backend
         const backendResponse = await fetch(backendUrl);
 
-        // Check if the backend responded successfully
+        // Check if the backend responded successfully.
+        // If not, we don't forward the body, we just return an error status.
         if (!backendResponse.ok || !backendResponse.body) {
-            // If the backend returned an error, parse it and forward it to the client
-            const errorBody = await backendResponse.json().catch(() => ({ message: 'Unknown backend error' }));
-            console.error(`[Next.js Proxy] Backend error: ${backendResponse.status}`, errorBody);
-            return NextResponse.json(
-                { success: false, message: errorBody.message || 'Failed to fetch stream from backend.' },
-                { status: backendResponse.status }
-            );
+            console.error(`[Next.js Proxy] Backend returned an error: ${backendResponse.status}`);
+            // Return an empty response with the actual error code.
+            // The browser will see this as a failed request for the audio source.
+            return new NextResponse(null, { status: backendResponse.status });
         }
 
         // Get the readable stream from the backend response

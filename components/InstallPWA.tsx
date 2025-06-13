@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, X } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -14,6 +14,7 @@ export default function InstallPWA() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isFirefox, setIsFirefox] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     // Check if the app is already installed
@@ -68,8 +69,12 @@ export default function InstallPWA() {
     }
   };
 
-  // Don't show anything if already installed
-  if (isInstalled) return null;
+  const handleCloseClick = () => {
+    setIsVisible(false);
+  };
+
+  // Don't show anything if already installed or closed by user
+  if (isInstalled || !isVisible) return null;
 
   // Show install button even without prompt for Firefox and iOS
   const shouldShow = installPrompt !== null || isFirefox || isIOS;
@@ -78,15 +83,20 @@ export default function InstallPWA() {
 
   return (
     <div className="fixed bottom-4 left-0 right-0 z-50 mx-auto max-w-md p-4 bg-card rounded-lg shadow-lg border border-border">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <div className="flex-1">
           <h3 className="font-medium">Installa VibeFree</h3>
           <p className="text-sm text-muted-foreground">Accedi più velocemente e usa offline</p>
         </div>
-        <Button onClick={handleInstallClick} className="ml-4">
-          <Download className="mr-2 h-4 w-4" />
-          Installa
-        </Button>
+        <div className="flex items-center">
+            <Button onClick={handleInstallClick}>
+              <Download className="mr-2 h-4 w-4" />
+              Installa
+            </Button>
+            <Button onClick={handleCloseClick} variant="ghost" size="icon" className="ml-1">
+                <X className="h-5 w-5" />
+            </Button>
+        </div>
       </div>
     </div>
   );

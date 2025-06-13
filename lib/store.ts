@@ -102,21 +102,17 @@ const getStreamUrl = (track: SpotifyTrack): string | null => {
 // This function calls the backend to warm up the cache for a track.
 const preloadTrack = async (track: SpotifyTrack): Promise<void> => {
   if (!track) return;
-  console.log(`[Preload] Inizio pre-caricamento per: ${track.name}`);
+  console.log(`[Preload] Avvio pre-fetching per: ${track.name}`);
   const params = new URLSearchParams({
     songName: track.name,
     artistName: track.artists.map(a => a.name).join(', '),
     durationMs: track.duration_ms.toString(),
   });
   try {
-    const response = await fetch(`/api/youtube/cache-lookup?${params.toString()}`);
-    if (response.ok) {
-        console.log(`[Preload] Successo per: ${track.name}`);
-    } else {
-        console.warn(`[Preload] Fallito per: ${track.name}`);
-    }
+    // Non usiamo await qui. La richiesta parte in background e non blocca l'UI.
+    fetch(`/api/youtube/cache-lookup?${params.toString()}`);
   } catch (error) {
-      console.error(`[Preload] Errore di rete per: ${track.name}`, error);
+      console.error(`[Preload] Errore di rete durante il pre-fetching per: ${track.name}`, error);
   }
 };
 
@@ -163,7 +159,7 @@ export const useUserStore = create<State & Actions>((set, get) => ({
   showHome: () => set({ currentView: 'home', selectedAlbumId: null, selectedArtistId: null }),
   showAlbumDetails: (albumId: string) => set({ currentView: 'albumDetails', selectedAlbumId: albumId }),
   showArtistDetails: (artistId: string) => set({ currentView: 'artistDetails', selectedArtistId: artistId }),
-  // Player Actions with Preloading
+  // Player Actions with Continuous Preloading
   playTracks: async (tracks, startIndex) => {
     const newActiveTrack = tracks[startIndex];
     set({
@@ -171,15 +167,15 @@ export const useUserStore = create<State & Actions>((set, get) => ({
       currentTrackIndex: startIndex,
       activeTrack: { ...newActiveTrack, url: getStreamUrl(newActiveTrack) ?? undefined },
       isPlayerVisible: true,
-      isTrackLoading: false, // The audio element handles loading state
     });
+    // Avvia il pre-fetching per le tracce successive
     get().preloadNextTracks();
   },
-  hidePlayer: () => set({ isPlayerVisible: false, activeTrack: null, isTrackLoading: false }),
+  hidePlayer: () => set({ isPlayerVisible: false, activeTrack: null }),
   playNext: async () => {
     const { playQueue, currentTrackIndex } = get();
     if (currentTrackIndex === null || currentTrackIndex >= playQueue.length - 1) {
-      set({ isPlayerVisible: false, activeTrack: null });
+      set({ isPlayerVisible: false, activeTrack: null }); // Fine della playlist
       return;
     }
     const nextIndex = currentTrackIndex + 1;
@@ -188,6 +184,7 @@ export const useUserStore = create<State & Actions>((set, get) => ({
         currentTrackIndex: nextIndex,
         activeTrack: { ...nextTrack, url: getStreamUrl(nextTrack) ?? undefined },
     });
+    // Ogni volta che si passa alla traccia successiva, si attiva il pre-fetching
     get().preloadNextTracks();
   },
   playPrevious: async () => {
@@ -199,24 +196,28 @@ export const useUserStore = create<State & Actions>((set, get) => ({
         currentTrackIndex: prevIndex,
         activeTrack: { ...prevTrack, url: getStreamUrl(prevTrack) ?? undefined },
     });
+    // Anche tornando indietro, ci assicuriamo che il buffer in avanti sia pieno
     get().preloadNextTracks();
   },
+  setPlayerExpanded: (isExpanded: boolean) => set({ isPlayerExpanded: isExpanded }),
+  setTrackProgress: (progress: { currentTime: number; duration: number; }) => {
+    set({ trackProgress: progress });
+  },
+  // Logica di pre-fetching continuo
   preloadNextTracks: async () => {
     const { playQueue, currentTrackIndex } = get();
     if (currentTrackIndex === null) return;
-    const preloadDepth = 2;
-    for (let i = 1; i <= preloadDepth; i++) {
-        const targetIndex = currentTrackIndex + i;
-        if (targetIndex < playQueue.length) {
-            // No need to check for URL, just trigger the preload
-            preloadTrack(playQueue[targetIndex]);
-        }
+
+    // Definiamo quante tracce vogliamo pre-caricare in anticipo
+    const PRELOAD_BUFFER = 2;
+
+    for (let i = 1; i <= PRELOAD_BUFFER; i++) {
+      const nextIndex = currentTrackIndex + i;
+      if (nextIndex < playQueue.length) {
+        const trackToPreload = playQueue[nextIndex];
+        // La funzione preloadTrack è asincrona ma non la aspettiamo
+        preloadTrack(trackToPreload);
+      }
     }
   },
-  setPlayerExpanded: (isExpanded) => {
-    set({ isPlayerExpanded: isExpanded });
-  },
-  setTrackProgress: (progress) => {
-    set({ trackProgress: progress });
-  }
 })) 

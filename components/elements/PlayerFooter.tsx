@@ -52,28 +52,6 @@ export default function PlayerFooter() {
     };
     
     useEffect(() => {
-        const audio = audioRef.current;
-        
-        const handleLoadedMetadata = () => {
-            if (audio) {
-                setTrackProgress({
-                    currentTime: audio.currentTime,
-                    duration: audio.duration,
-                });
-            }
-        };
-
-        if (audio) {
-            audio.addEventListener('timeupdate', handleTimeUpdate);
-            audio.addEventListener('loadedmetadata', handleLoadedMetadata);
-            return () => {
-                audio.removeEventListener('timeupdate', handleTimeUpdate);
-                audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
-            };
-        }
-    }, [handleTimeUpdate, setTrackProgress]);
-
-    useEffect(() => {
         if (activeTrack?.url && audioRef.current) {
             audioRef.current.src = activeTrack.url;
             audioRef.current.volume = volume;
@@ -149,6 +127,9 @@ export default function PlayerFooter() {
                 <Button onClick={(e) => { e.stopPropagation(); playNext(); }} variant="ghost" size="icon" disabled={isTrackLoading}>
                     <SkipForwardIcon className="h-5 w-5" />
                 </Button>
+                <Button onClick={(e) => { e.stopPropagation(); hidePlayer(); }} variant="ghost" size="icon" className="ml-2">
+                     <XIcon className="h-5 w-5" />
+                </Button>
             </div>
         </div>
     );
@@ -160,6 +141,8 @@ export default function PlayerFooter() {
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
                 onEnded={playNext}
+                onTimeUpdate={handleTimeUpdate}
+                onLoadedMetadata={handleTimeUpdate}
             />
 
             <Drawer>
