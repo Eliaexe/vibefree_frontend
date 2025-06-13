@@ -48,7 +48,11 @@ export default function PlayerFooter() {
     // Effect for Media Session API
     useEffect(() => {
         if ('mediaSession' in navigator && activeTrack) {
+            console.log('[Media Session] Inizializzazione per:', activeTrack.name);
+            
             const setupMediaSession = () => {
+                console.log('[Media Session] Setup in corso...');
+                
                 const mediaMetadata = {
                     title: activeTrack.name,
                     artist: activeTrack.artists.map(a => a.name).join(', '),
@@ -61,32 +65,45 @@ export default function PlayerFooter() {
                 };
                 
                 navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
+                console.log('[Media Session] Metadati impostati:', mediaMetadata);
 
                 navigator.mediaSession.setActionHandler('play', () => {
+                    console.log('[Media Session] Play handler chiamato');
                     if (audioRef.current) {
                         audioRef.current.play();
                     }
                 });
                 navigator.mediaSession.setActionHandler('pause', () => {
+                    console.log('[Media Session] Pause handler chiamato');
                     if (audioRef.current) {
                         audioRef.current.pause();
                     }
                 });
-                navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
-                navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+                navigator.mediaSession.setActionHandler('previoustrack', () => {
+                    console.log('[Media Session] Previous track handler chiamato');
+                    playPrevious();
+                });
+                navigator.mediaSession.setActionHandler('nexttrack', () => {
+                    console.log('[Media Session] Next track handler chiamato');
+                    playNext();
+                });
                 
                 // Imposta lo stato iniziale
                 navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+                console.log('[Media Session] Stato impostato a:', isPlaying ? 'playing' : 'paused');
             };
 
             // Aspetta che l'audio sia caricato prima di impostare la Media Session
             if (audioRef.current) {
+                console.log('[Media Session] Audio ref trovato, readyState:', audioRef.current.readyState);
+                
                 if (audioRef.current.readyState >= 2) {
                     // Audio già caricato
                     setupMediaSession();
                 } else {
                     // Aspetta che l'audio sia caricato
                     const handleLoadedMetadata = () => {
+                        console.log('[Media Session] Audio metadata caricata');
                         setupMediaSession();
                         audioRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
                     };
@@ -96,6 +113,15 @@ export default function PlayerFooter() {
                         audioRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
                     };
                 }
+            } else {
+                console.log('[Media Session] Audio ref non trovato');
+            }
+        } else {
+            if (!('mediaSession' in navigator)) {
+                console.log('[Media Session] API non supportata');
+            }
+            if (!activeTrack) {
+                console.log('[Media Session] Nessuna traccia attiva');
             }
         }
     }, [activeTrack, playNext, playPrevious, isPlaying]);
@@ -104,6 +130,7 @@ export default function PlayerFooter() {
     useEffect(() => {
         if ('mediaSession' in navigator && activeTrack) {
             navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            console.log('[Media Session] Stato aggiornato a:', isPlaying ? 'playing' : 'paused');
         }
     }, [isPlaying, activeTrack]);
 
@@ -131,6 +158,36 @@ export default function PlayerFooter() {
                 .catch(e => console.error("Error playing audio:", e));
         }
     }, [activeTrack?.id, activeTrack?.url]);
+
+    // Effect per sincronizzare Media Session con eventi audio
+    useEffect(() => {
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        const handlePlay = () => {
+            setIsPlaying(true);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+                console.log('[Media Session] Audio play event - stato: playing');
+            }
+        };
+
+        const handlePause = () => {
+            setIsPlaying(false);
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+                console.log('[Media Session] Audio pause event - stato: paused');
+            }
+        };
+
+        audio.addEventListener('play', handlePlay);
+        audio.addEventListener('pause', handlePause);
+
+        return () => {
+            audio.removeEventListener('play', handlePlay);
+            audio.removeEventListener('pause', handlePause);
+        };
+    }, [activeTrack]);
 
     if (!isPlayerVisible || !activeTrack) {
         return null;

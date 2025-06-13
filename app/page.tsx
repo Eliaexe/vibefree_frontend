@@ -37,7 +37,7 @@ export default function Home() {
         <h1 className="text-3xl md:text-4xl font-bold">VibeFree</h1>
         {isLoggedIn && user && (
             <div>
-                <p>Ciao, {user.display_name}</p>
+                <p>Hello, {user.display_name}</p>
             </div>
         )}
       </header>
