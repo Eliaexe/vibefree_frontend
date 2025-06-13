@@ -36,6 +36,38 @@ export default function PlayerFooter() {
     const [volume, setVolume] = useState(0.5);
     const [lastVolume, setLastVolume] = useState(0.5);
 
+    const handlePlayPause = useCallback(() => {
+        if (!audioRef.current) return;
+        if (isPlaying) {
+            audioRef.current.pause();
+        } else {
+            audioRef.current.play();
+        }
+    }, [isPlaying]);
+
+    // Effect for Media Session API
+    useEffect(() => {
+        if ('mediaSession' in navigator && activeTrack) {
+            const mediaMetadata = {
+                title: activeTrack.name,
+                artist: activeTrack.artists.map(a => a.name).join(', '),
+                album: activeTrack.album?.name || '',
+                artwork: activeTrack.album?.images?.map(image => ({
+                    src: image.url,
+                    sizes: `${image.width}x${image.height}`,
+                    type: 'image/jpeg' // o il tipo corretto se lo conosci
+                })) || []
+            };
+            
+            navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
+
+            navigator.mediaSession.setActionHandler('play', () => handlePlayPause());
+            navigator.mediaSession.setActionHandler('pause', () => handlePlayPause());
+            navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
+            navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+        }
+    }, [activeTrack, playNext, playPrevious, handlePlayPause]);
+
     const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
             setTrackProgress({
@@ -64,15 +96,6 @@ export default function PlayerFooter() {
     if (!isPlayerVisible || !activeTrack) {
         return null;
     }
-
-    const handlePlayPause = () => {
-        if (!audioRef.current) return;
-        if (isPlaying) {
-            audioRef.current.pause();
-        } else {
-            audioRef.current.play();
-        }
-    };
 
     const handleVolumeChange = (newVolume: number[]) => {
         const vol = newVolume[0];

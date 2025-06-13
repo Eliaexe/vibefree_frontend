@@ -16,7 +16,7 @@ export interface SpotifyTrack {
     artists: { name: string }[];
     album: {
         name: string;
-        images: { url: string; }[];
+        images: { url: string; height: number; width: number; }[];
     };
     duration_ms: number;
     external_urls: {
@@ -34,7 +34,7 @@ export interface SavedAlbum {
         id: string;
         name: string;
         artists: { name: string }[];
-        images: { url: string; }[];
+        images: { url: string; height: number; width: number; }[];
         external_urls: {
             spotify: string;
         }
