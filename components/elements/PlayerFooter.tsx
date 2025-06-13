@@ -48,32 +48,64 @@ export default function PlayerFooter() {
     // Effect for Media Session API
     useEffect(() => {
         if ('mediaSession' in navigator && activeTrack) {
-            const mediaMetadata = {
-                title: activeTrack.name,
-                artist: activeTrack.artists.map(a => a.name).join(', '),
-                album: activeTrack.album?.name || '',
-                artwork: activeTrack.album?.images?.map(image => ({
-                    src: image.url,
-                    sizes: `${image.width}x${image.height}`,
-                    type: 'image/jpeg' // o il tipo corretto se lo conosci
-                })) || []
-            };
-            
-            navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
+            const setupMediaSession = () => {
+                const mediaMetadata = {
+                    title: activeTrack.name,
+                    artist: activeTrack.artists.map(a => a.name).join(', '),
+                    album: activeTrack.album?.name || '',
+                    artwork: activeTrack.album?.images?.map(image => ({
+                        src: image.url,
+                        sizes: `${image.width}x${image.height}`,
+                        type: 'image/jpeg'
+                    })) || []
+                };
+                
+                navigator.mediaSession.metadata = new MediaMetadata(mediaMetadata);
 
-            navigator.mediaSession.setActionHandler('play', () => handlePlayPause());
-            navigator.mediaSession.setActionHandler('pause', () => handlePlayPause());
-            navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
-            navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+                navigator.mediaSession.setActionHandler('play', () => {
+                    if (audioRef.current) {
+                        audioRef.current.play();
+                    }
+                });
+                navigator.mediaSession.setActionHandler('pause', () => {
+                    if (audioRef.current) {
+                        audioRef.current.pause();
+                    }
+                });
+                navigator.mediaSession.setActionHandler('previoustrack', () => playPrevious());
+                navigator.mediaSession.setActionHandler('nexttrack', () => playNext());
+                
+                // Imposta lo stato iniziale
+                navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+            };
+
+            // Aspetta che l'audio sia caricato prima di impostare la Media Session
+            if (audioRef.current) {
+                if (audioRef.current.readyState >= 2) {
+                    // Audio già caricato
+                    setupMediaSession();
+                } else {
+                    // Aspetta che l'audio sia caricato
+                    const handleLoadedMetadata = () => {
+                        setupMediaSession();
+                        audioRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                    };
+                    audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+                    
+                    return () => {
+                        audioRef.current?.removeEventListener('loadedmetadata', handleLoadedMetadata);
+                    };
+                }
+            }
         }
-    }, [activeTrack, playNext, playPrevious, handlePlayPause]);
+    }, [activeTrack, playNext, playPrevious, isPlaying]);
 
     // Effect to keep playback state in sync with the Media Session API
     useEffect(() => {
-        if ('mediaSession' in navigator) {
+        if ('mediaSession' in navigator && activeTrack) {
             navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
         }
-    }, [isPlaying]);
+    }, [isPlaying, activeTrack]);
 
     const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
@@ -199,7 +231,7 @@ export default function PlayerFooter() {
                         {/* Large Album Art & Details */}
                         <div className="flex flex-col items-center gap-4 text-center">
                             {imageUrl ? (
-                                <Image src={imageUrl} alt={activeTrack.album.name} width={250} height={250} className="rounded-lg shadow-2xl w-full max-w-xs aspect-square" />
+                                <Image src={imageUrl} alt={activeTrack.album.name} width={200} height={200} className="rounded-lg shadow-2xl w-full max-w-xs aspect-square" />
                             ) : (
                                 <div className="w-full max-w-xs aspect-square bg-muted rounded-lg shadow-2xl flex items-center justify-center">
                                     <Music2Icon className="h-24 w-24 text-muted-foreground" />
