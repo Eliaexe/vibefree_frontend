@@ -24,7 +24,7 @@ export default function PlayerFooter() {
         playQueue,
         currentTrackIndex,
         trackProgress,
-        hidePlayer, 
+        hidePlayer,  
         playNext, 
         playPrevious,
         playTracks,
