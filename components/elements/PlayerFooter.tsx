@@ -68,6 +68,13 @@ export default function PlayerFooter() {
         }
     }, [activeTrack, playNext, playPrevious, handlePlayPause]);
 
+    // Effect to keep playback state in sync with the Media Session API
+    useEffect(() => {
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+        }
+    }, [isPlaying]);
+
     const handleTimeUpdate = useCallback(() => {
         if (audioRef.current) {
             setTrackProgress({
